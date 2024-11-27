@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Thư Viện</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="container mx-auto p-4">
+    <!-- Header -->
+    <header class="text-center py-6">
+      <h1 class="text-4xl font-bold">Quản Lý Thư Viện</h1>
+    </header>
+
+    <!-- Tabs -->
+    <div class="flex justify-center space-x-4 mb-6">
+      <button id="tabCategories" class="bg-blue-500 text-white px-4 py-2 rounded">Quản Lý Danh Mục</button>
+      <button id="tabBooks" class="bg-blue-500 text-white px-4 py-2 rounded">Quản Lý Sách</button>
+    </div>
+
+    <!-- Quản lý danh mục -->
+    <div id="categoriesSection" class="hidden">
+      <h2 class="text-2xl font-bold mb-4">Danh Mục Sách</h2>
+      <div class="mb-4">
+        <input id="categoryTitle" type="text" placeholder="Tên danh mục" class="border border-gray-300 p-2 rounded w-1/2">
+        <button id="addCategory" class="bg-green-500 text-white px-4 py-2 rounded ml-2">Thêm Danh Mục</button>
+      </div>
+      <table class="table-auto w-full border-collapse border border-gray-400">
+        <thead>
+          <tr>
+            <th class="border border-gray-300 px-4 py-2">ID</th>
+            <th class="border border-gray-300 px-4 py-2">Tên Danh Mục</th>
+            <th class="border border-gray-300 px-4 py-2">Hành Động</th>
+          </tr>
+        </thead>
+        <tbody id="categoriesTable">
+          <!-- Danh mục sẽ được thêm ở đây -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Quản lý sách -->
+    <div id="booksSection" class="hidden">
+      <h2 class="text-2xl font-bold mb-4">Quản Lý Sách</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <input id="bookTitle" type="text" placeholder="Tên sách" class="border border-gray-300 p-2 rounded">
+        <input id="authorName" type="text" placeholder="Tên tác giả" class="border border-gray-300 p-2 rounded">
+        <input id="bookPrice" type="number" placeholder="Giá sách" class="border border-gray-300 p-2 rounded">
+        <select id="categorySelector" class="border border-gray-300 p-2 rounded">
+          <option value="">Chọn danh mục</option>
+        </select>
+        <input id="bookIcon" type="file" class="border border-gray-300 p-2 rounded">
+      </div>
+      <button id="addBook" class="bg-green-500 text-white px-4 py-2 rounded mb-4">Thêm Sách</button>
+      <table class="table-auto w-full border-collapse border border-gray-400">
+        <thead>
+          <tr>
+            <th class="border border-gray-300 px-4 py-2">ID</th>
+            <th class="border border-gray-300 px-4 py-2">Tên Sách</th>
+            <th class="border border-gray-300 px-4 py-2">Tác Giả</th>
+            <th class="border border-gray-300 px-4 py-2">Danh Mục</th>
+            <th class="border border-gray-300 px-4 py-2">Giá</th>
+            <th class="border border-gray-300 px-4 py-2">Hình Ảnh</th>
+            <th class="border border-gray-300 px-4 py-2">Hành Động</th>
+          </tr>
+        </thead>
+        <tbody id="booksTable">
+          <!-- Sách sẽ được thêm ở đây -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    const categoriesSection = document.getElementById("categoriesSection");
+    const booksSection = document.getElementById("booksSection");
+    const tabCategories = document.getElementById("tabCategories");
+    const tabBooks = document.getElementById("tabBooks");
+
+    const categoriesTable = document.getElementById("categoriesTable");
+    const booksTable = document.getElementById("booksTable");
+    const categorySelector = document.getElementById("categorySelector");
+
+    let categories = JSON.parse(localStorage.getItem("categories")) || [];
+    let books = JSON.parse(localStorage.getItem("books")) || [];
+
+    // Switch tabs
+    tabCategories.addEventListener("click", () => {
+      categoriesSection.classList.remove("hidden");
+      booksSection.classList.add("hidden");
+    });
+
+    tabBooks.addEventListener("click", () => {
+      booksSection.classList.remove("hidden");
+      categoriesSection.classList.add("hidden");
+    });
+
+    // Render categories
+    function renderCategories() {
+      categoriesTable.innerHTML = "";
+      categorySelector.innerHTML = `<option value="">Chọn danh mục</option>`;
+      categories.forEach((cat, index) => {
+        categoriesTable.innerHTML += `
+          <tr>
+            <td class="border border-gray-300 px-4 py-2">${cat.id}</td>
+            <td class="border border-gray-300 px-4 py-2">${cat.title}</td>
+            <td class="border border-gray-300 px-4 py-2">
+              <button class="bg-red-500 text-white px-2 py-1 rounded" onclick="deleteCategory(${index})">Xóa</button>
+            </td>
+          </tr>
+        `;
+        categorySelector.innerHTML += `<option value="${cat.id}">${cat.title}</option>`;
+      });
+    }
+
+    // Add category
+    document.getElementById("addCategory").addEventListener("click", () => {
+      const title = document.getElementById("categoryTitle").value.trim();
+      if (!title) return alert("Tên danh mục không được để trống!");
+      categories.push({ id: Date.now(), title });
+      localStorage.setItem("categories", JSON.stringify(categories));
+      renderCategories();
+      document.getElementById("categoryTitle").value = "";
+    });
+
+    // Delete category
+    function deleteCategory(index) {
+      if (books.some(book => book.categoryId === categories[index].id)) {
+        return alert("Không thể xóa danh mục đang chứa sách!");
+      }
+      categories.splice(index, 1);
+      localStorage.setItem("categories", JSON.stringify(categories));
+      renderCategories();
+    }
+
+    // Render books
+    function renderBooks() {
+      booksTable.innerHTML = "";
+      books.forEach((book, index) => {
+        booksTable.innerHTML += `
+          <tr>
+            <td class="border border-gray-300 px-4 py-2">${book.id}</td>
+            <td class="border border-gray-300 px-4 py-2">${book.title}</td>
+            <td class="border border-gray-300 px-4 py-2">${book.authorName}</td>
+            <td class="border border-gray-300 px-4 py-2">${categories.find(cat => cat.id === book.categoryId)?.title || ""}</td>
+            <td class="border border-gray-300 px-4 py-2">${book.price}</td>
+            <td class="border border-gray-300 px-4 py-2"><img src="${book.iconUrl}" alt="icon" class="h-12 w-12"></td>
+            <td class="border border-gray-300 px-4 py-2">
+              <button class="bg-red-500 text-white px-2 py-1 rounded" onclick="deleteBook(${index})">Xóa</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Add book
+    document.getElementById("addBook").addEventListener("click", () => {
+      const title = document.getElementById("bookTitle").value.trim();
+      const authorName = document.getElementById("authorName").value.trim();
+      const price = document.getElementById("bookPrice").value;
+      const categoryId = document.getElementById("categorySelector").value;
+      const iconFile = document.getElementById("bookIcon").files[0];
+
+      if (!title || !authorName || !price || !categoryId || !iconFile) {
+        return alert("Vui lòng nhập đầy đủ thông tin!");
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        books.push({
+          id: Date.now(),
+          title,
+          authorName,
+          price,
+          categoryId,
+          iconUrl: event.target.result,
+        });
+        localStorage.setItem("books", JSON.stringify(books));
+        renderBooks();
+        document.getElementById("bookTitle").value = "";
+        document.getElementById("authorName").value = "";
+        document.getElementById("bookPrice").value = "";
+        document.getElementById("categorySelector").value = "";
+        document.getElementById("bookIcon").value = "";
+      };
+      reader.readAsDataURL(iconFile);
+    });
+
+    // Delete book
+    function deleteBook(index) {
+      books.splice(index, 1);
+      localStorage.setItem("books", JSON.stringify(books));
+      renderBooks();
+    }
+
+    // Initial render
+    renderCategories();
+    renderBooks();
+  </script>
+</body>
+</html>
